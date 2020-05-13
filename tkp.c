@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "tkp.h"
 
@@ -32,6 +33,17 @@ char hex2char(int cur_char) {
 		return '.';
 	else if (cur_char == TKP_COMMA)
 		return ',';
+}
+
+void print_bin(char *input_str, size_t len) {
+	for (int cur_char_pos = 0; cur_char_pos < len; cur_char_pos++) {
+		// printf("%02d | %c| ", input_str[cur_char_pos], (input_str[cur_char_pos] < 11) ? input_str[cur_char_pos] + 'A' : input_str[cur_char_pos]);
+		printf("%2d | ", cur_char_pos);
+		for (int i = 7; i >-1; i--) {
+			printf("%d", input_str[cur_char_pos] & 1 << i ? 1 : 0);
+		}
+		printf("\n");
+	} 
 }
 
 size_t ascii2tkp(int *ret_arr, char *input_str, size_t len) {
@@ -71,7 +83,7 @@ size_t ascii2tkp(int *ret_arr, char *input_str, size_t len) {
 	return output_arr_size;
 }
 
-int tkp2ascii(char *ret_str, int *input_arr) {
+size_t tkp2ascii(char *ret_str, int *input_arr) {
 	int intermediary[50];
 	// int intermediary2[50];
 	// memset(intermediary, 0, 50);
@@ -117,25 +129,139 @@ int tkp2ascii(char *ret_str, int *input_arr) {
 	return ret_str_len;
 }
 
+char *ascii2tkpstr(char *input_str, size_t len) {
+	printf("Input str: %s\n", input_str);
+	// char *intermediary = malloc(sizeof(char) * len);
+	char intermediary[len];
+
+	size_t ret_str_len = ((3 * len) + 3)/4; // round up calculation
+	// char ret_str[ret_str_len];
+	char *ret_str = malloc(sizeof(char) * ret_str_len);
+	// char *ret_str = calloc(ret_str_len, sizeof(char));
+	
+	printf("Inital length: %d | Compressed length: %d\n", len, ret_str_len);
+
+	for (int cur_char_pos = 0; cur_char_pos < len; cur_char_pos++) {
+		// printf("%c: | ", input_str[cur_char_pos]);
+		// for (int i = 7; i >-1; i--) {
+		// 	printf("%d", input_str[cur_char_pos] & 1<<i ? 1 : 0);
+		// }
+
+		char newchar = char2hex(input_str[cur_char_pos]);
+		intermediary[cur_char_pos] = newchar;
+
+		// printf(" | %02d | ", newchar);
+		// for (int i = 7; i >-1; i--) {
+		// 	printf("%d", intermediary[cur_char_pos] & 1<<i ? 1 : 0);
+		// }
+		// printf("\n");
+	}
+
+	// printf("###################\n\tINTERMEDIARY\n###################\n");
+	// print_bin(intermediary, len);
+	// printf("###################\n");
+
+	int bit_pos = 0;
+	for (int cur_char_pos = 0; cur_char_pos < len; cur_char_pos++) {
+		for (int i = 5; i >-1; i--) {
+			int arr_index = bit_pos / 8;
+			int bit_index = bit_pos % 8;
+
+			if (intermediary[cur_char_pos] & 1 << i)
+				ret_str[arr_index] |= 1 << bit_index;
+			bit_pos++;
+		}
+	}
+	ret_str[ret_str_len] = '\n';
+	// printf("Output string: %s\n", ret_str);
+
+	// printf("###################\n\tENCODED\n###################\n");
+	// print_bin(ret_str, ret_str_len);
+	// printf("###################\n");
+	return ret_str;
+}
+
+char *tkp2asciistr(char *input_str, size_t len) {
+	// printf("Input encoded string: %s\n", input_str);
+	len--; // to ignore the NULL terminator
+	size_t ret_str_len = ((4 * len) + 2)/3; // round up calculation
+
+	char *ret_str = malloc(sizeof(char) * ret_str_len);
+	printf("Encoded length: %d | Decoded length: %d\n", len, ret_str_len);
+	// print_bin(input_str);
+
+	int bit_pos = 0;
+	for (int cur_char_pos = 0; cur_char_pos < ret_str_len; cur_char_pos++) {
+		// printf("1 %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+		for (int i = 5; i >-1; i--) {
+			int arr_index = bit_pos / 8;
+			int bit_index = bit_pos % 8;
+
+			// printf("A %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+			if (input_str[arr_index] & 1 << bit_index)
+				// ret_str[arr_index] |= 1 << (5 - bit_index);
+				// printf("B %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+				ret_str[cur_char_pos] |= 1 << i;
+				// printf("C %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+
+			bit_pos++;
+			// printf("D %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+
+		}
+		// printf("2 %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+		ret_str[cur_char_pos] = hex2char(ret_str[cur_char_pos]);
+		// ret_str[cur_char_pos] = ret_str[cur_char_pos] >> 2;
+		// ret_str[cur_char_pos] = hex2char(ret_str[cur_char_pos]);
+		// printf("3 %d %d %d\n", ret_str_len, cur_char_pos, strlen(ret_str));
+	}
+	// printf("###################\n\tDECODEDHEX\n###################\n");
+	// print_bin(ret_str, ret_str_len);
+	// printf("###################\n");
+	// for (int cur_char_pos = 0; cur_char_pos < len; cur_char_pos++) {
+	// 	ret_str[cur_char_pos] = hex2char(ret_str[cur_char_pos]);
+	// }
+	// printf("Decoded string: %s\n", ret_str);
+
+	// printf("###################\n\tDECODED\n###################\n");
+	// print_bin(ret_str, ret_str_len);
+	// printf("###################\n");
+
+	ret_str[ret_str_len] = '\0';
+	return ret_str;
+}
+
 int main(void) {
 	char test_string[50] = "Nobody expects the Spanish Inquisition.,";
-	int tkp_arr[50];
+	// int tkp_arr[50];
 
-	size_t encoded_len = ascii2tkp(tkp_arr, test_string, strlen(test_string));
+	// size_t encoded_len = ascii2tkp(tkp_arr, test_string, strlen(test_string));
 
-	printf("%d\n", encoded_len);
+	// printf("%d\n", encoded_len);
 
-	// for (int cur_pos = encoded_len-1; cur_pos >= 0; cur_pos--) {
-	// 	for (int i = 7; i >= 0; i--) {
-	// 		printf("%d", tkp_arr[cur_pos] & 1<< i ? 1 : 0);
-	// 	}
-	// 	printf("\n");
-	// }
+	// // for (int cur_pos = encoded_len-1; cur_pos >= 0; cur_pos--) {
+	// // 	for (int i = 7; i >= 0; i--) {
+	// // 		printf("%d", tkp_arr[cur_pos] & 1<< i ? 1 : 0);
+	// // 	}
+	// // 	printf("\n");
+	// // }
 
-	char ret_str[50];
-	size_t ret_str_len = tkp2ascii(ret_str, tkp_arr);
-	printf("Output str: %s\n", ret_str);
-	printf("%d\n", ret_str_len);
+	// char ret_str[50];
+	// size_t ret_str_len = tkp2ascii(ret_str, tkp_arr);
+	// printf("Output str: %s\n", ret_str);
+	// printf("%d\n", ret_str_len);
 
+	char *tkp_str = ascii2tkpstr(test_string, strlen(test_string));
+	printf("[%d] %s\n", strlen(tkp_str), tkp_str);
+
+	char *ascii_str = tkp2asciistr(tkp_str, strlen(tkp_str));
+	printf("[%d] %s\n", strlen(ascii_str), ascii_str);
+
+	// printf("###################\n\tDECODED\n###################\n");
+	// print_bin(ascii_str, strlen(ascii_str));
+	// printf("###################\n");
+
+	free(tkp_str);
+	free(ascii_str);
+	// printf("%s\n", tkp_str);
 	return 0;
 }
