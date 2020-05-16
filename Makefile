@@ -1,21 +1,21 @@
 CC = gcc
-CFLAGS = -g -O0
 
-FILE_BASE_NAME = tkp
+FILE_BASE_NAME = libtkp
 C_FILE = $(FILE_BASE_NAME).c
 H_FILE = $(FILE_BASE_NAME).h
 O_FILE = $(FILE_BASE_NAME).o
+SO_FILE = $(FILE_BASE_NAME).so
 
 .PHONY: compile build run
 compile: $(C_FILE)
-	$(CC) $(CFLAGS) -c $(C_FILE) -o $(O_FILE)
+	$(CC) -c -fPIC $(C_FILE) -o $(O_FILE)
 
 build: compile
-	$(CC) $(O_FILE) -o $(FILE_BASE_NAME)
+	$(CC) -shared $(O_FILE) -o $(SO_FILE)
 
 run: build
-	./$(FILE_BASE_NAME)
+	./$(SO_FILE)
 
 .PHONY: clean
 clean:
-	rm $(O_FILE) $(FILE_BASE_NAME)
+	rm $(O_FILE) $(SO_FILE)
