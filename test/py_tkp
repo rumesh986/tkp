@@ -30,13 +30,14 @@ test_str_len = len(test_str)
 
 test_string = create_string_buffer(test_str.encode('ascii'))
 
-encoded_len = ((3 * test_str_len) + 3) // 4
+encoded_len = ((3 * test_str_len) + 3) // 4 # round up calculation to get required length
 encoded_str = create_string_buffer(encoded_len)
 encode_str(test_string, encoded_str, c_size_t(encoded_len))
 
 print(encoded_str.raw)
 
-decoded_str = create_string_buffer(test_str_len)
+decoded_len = ((4 * encoded_len) + 2) // 3 # round up calculation to get required length
+decoded_str = create_string_buffer(decoded_len)
 
 decode_str(encoded_str, decoded_str, test_str_len)
 # print(decoded_str)
